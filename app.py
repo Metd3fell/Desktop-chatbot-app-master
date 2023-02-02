@@ -1,0 +1,80 @@
+import json
+from difflib import get_close_matches
+from tkinter import Tk, Entry, Button, Text, Scrollbar
+
+# Chatbot class with a window parameter
+class Chatbot:
+    # Initialize the chatbot with the window and set up the user interface
+    def __init__(self, window):
+        # Set the window title, size, and make it non-resizable
+        window.title('Iris Assitant')
+        window.geometry('405x400')
+        window.resizable(0, 0)
+        # Create a Text widget for displaying the chat session
+        self.message_session = Text(window, bd=3, relief="flat", font=(
+            "Times", 10), undo=True, wrap="word")
+        # Configure the appearance of the Text widget
+        self.message_session.config(
+            width=45, height=15, bg="#596", fg="white", state='disabled')
+        # Create a Scrollbar widget for the Text widget
+        self.overscroll = Scrollbar(window, command=self.message_session.yview)
+        self.overscroll.config(width=20)
+        # Set the yscrollcommand of the Text widget to the set method of the Scrollbar widget
+        self.message_session["yscrollcommand"] = self.overscroll.set
+        # Initialize the message position to 1.5, which is the starting position of the Text widget
+        self.message_position = 1.5
+        # Create a Button widget for sending messages
+        self.send_button = Button(window, text='send', fg='white', bg='blue', width=9, font=(
+            'Times', 12), relief='flat', command=self.reply_to_you)
+        # Create an Entry widget for typing messages
+        self.Message_Entry = Entry(window, width=40, font=('Times', 12))
+        # Bind the Entry widget to the reply_to_you method, so that it is called when the user hits 'Enter'
+        self.Message_Entry.bind('<Return>', self.reply_to_you)
+        # Place the widgets on the window
+        self.message_session.place(x=20, y=20)
+        self.overscroll.place(x=370, y=50)
+        self.send_button.place(x=0, y=360)
+        self.Message_Entry.place(x=135, y=365)
+        # Load the knowledge base from the 'knowledge.json' file
+        self.Brain = json.load(open('knowledge.json'))
+
+    # Method for adding a message to the chat session
+    def add_chat(self, message):
+        # Increment the message position by 1.5
+        self.message_position += 1.5
+        # Clear the Entry widget
+        self.Message_Entry.delete(0, 'end')
+        # Enable the Text widget so that we can insert the message
+        self.message_session.config(state='normal')
+        # Insert the message at the current message position
+        self.message_session.insert(self.message_position, message)
+        # Scroll to the end of the Text widget
+        self.message_session.see('end')
+           # Disable the Text widget again to prevent further editing
+        self.message_session.config(state='disabled')
+
+    # Method for sending a reply to the user's message
+    def reply_to_you(self, event=None):
+        # Get the user's message from the Entry widget and convert it to lowercase
+        message = self.Message_Entry.get().lower()
+        # Add a prefix to the user's message to indicate that it is from the user
+        message = 'you: ' + message+'\n'
+        # Use the get_close_matches function from the difflib library to find a close match to the user's message in the knowledge base
+        close_match = get_close_matches(message, self.Brain.keys())
+        # If a close match is found, send the first response from the knowledge base for that message
+        if close_match:
+            reply = 'Iris: ' + self.Brain[close_match[0]][0] + '\n'
+        # If no close match is found, send a message saying that the message is not in the knowledge base
+        else:
+            reply = 'Iris: ' + 'Cant it in my knowledge base\n'
+        # Add the user's message and the chatbot's reply to the chat session
+        self.add_chat(message)
+        self.add_chat(reply)
+
+# Create the root window
+root = Tk()
+# Create a Chatbot object with the root window as a parameter
+Chatbot(root)
+# Start the mainloop to display the window and process events
+root.mainloop()
+
